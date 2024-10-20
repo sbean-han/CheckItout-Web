@@ -73,7 +73,8 @@ class review_post:
         stars, num=self.std_stars(self.summary['Stars'])
         self.summary['Stars']=stars
         self.summary['Score']=num
-        
+
+    @staticmethod
     def std_stars(stars):
         one=['⭐','★','🌟']
         half={1: ['🌛', '반', '🌛', '🌜', '🌗', '🫥', '🌓', '✨', '🫡', '?', '💔'],
