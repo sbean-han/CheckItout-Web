@@ -107,7 +107,7 @@ class review_post:
                     break
         if num==0:
             star_str=stars
-        elif:
+        else:
             star_str='⭐'*int(num)
             if (num-int(num))>0:
                 star_str=star_str+'🌛'
