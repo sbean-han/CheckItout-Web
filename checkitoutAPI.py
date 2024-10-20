@@ -70,12 +70,54 @@ class review_post:
         self.refine_exceptions()
 
     def get_score_from_stars(self):
-        return 'Yet'
+        stars, num=self.std_stars(self.summary['Stars'])
+        self.summary['Stars']=stars
+        self.summary['Score']=num
+        
+    def std_stars(stars):
+        one=['⭐','★','🌟']
+        half={1: ['🌛', '반', '🌛', '🌜', '🌗', '🫥', '🌓', '✨', '🫡', '?', '💔'],
+            3: ['.5'],
+            4: ['+0.5'],
+            2: ['쩜오'],
+            5:  ['/+0.5']
+            }
+
+        not_stars={
+            '5점':('⭐⭐⭐⭐⭐',5),
+        }
+        #3. not_stars
+        if stars in not_stars:
+            return not_stars[stars]
+        #2. int
+        if type(stars)==int:
+            num=stars
+        #1. 기본
+        else:
+            num=0
+            for i in range(5):
+                if stars[i] in one:
+                    num+=1
+                else:
+                    break
+            length=1
+            while len(stars[i:])>=length:
+                if half[length]==stars[i:i+length]:
+                    num+=0.5
+                    break
+        if num==0:
+            star_str='Error'
+        elif:
+            star_str='⭐'*int(num)
+            if (num-int(num))>0:
+                star_str=star_str+'🌛'
+    
+        return star_str, num
 
     def refine_exceptions(self):
         keys=self.summary.keys()
         if 'Score' in keys and self.summary['Score']=='인증':
-            self.summary['Score']=self.get_score_from_stars()
+            self.get_score_from_stars()
     
 
 cont_hdr_exceptions={
