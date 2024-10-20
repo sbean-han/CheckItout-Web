@@ -1,6 +1,6 @@
 import streamlit as st
 import json
-from .CheckItOut import checkitoutAPI
+import checkitoutAPI
 import pandas as pd
 
 reviews=checkitoutAPI.get_reviews()
