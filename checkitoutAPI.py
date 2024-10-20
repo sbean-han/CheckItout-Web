@@ -11,6 +11,7 @@ class CIOBandToken:
     client_secret='mebdlfZfOzbicInuZHp15mORFL8TFUL0'
     bandkey='AAAEXPSpQDly5hUs9Q5RUmv0'
 
+
 def get_reviews() ->list:
     CIOBandAPI=BandOpenApi(CIOBandToken.token)
     reviews=[]
@@ -27,11 +28,17 @@ def get_reviews() ->list:
     return reviews
 
 def reviews_tojson(reviews):
+    reviews=[rv.__dict__ for rv in reviews]
     with open('reviews.json','w',encoding='utf-8') as f:
         json.dump(reviews, f, ensure_ascii=False)
 
 class review_post:
-    def __init__(self, review):
+    def __init__(self,review, type='dict'):
+        if type=='dict':
+            self.from_dict(review)
+        else: self.from_json(review)
+
+    def from_dict(self, review):
         self.reviewer=review['author']['name']
         self.pre_contents=review['content']
         self.time=review['created_at']
@@ -40,6 +47,10 @@ class review_post:
         self.post_key=review['post_key']
         self.refine_contents()
     
+    def from_json(self,review):
+        for key, val in review.items():
+            setattr(self, key,val)
+
     def refine_contents(self):
         bfr_cont=self.pre_contents
         header={"#":('',2),
@@ -75,49 +86,55 @@ class review_post:
         self.summary['Score']=num
 
     def std_stars(self,stars):
+        stars.replace(' ','')
         one=['⭐','★','🌟']
-        half={1: ['🌛', '반', '🌛', '🌜', '🌗', '🫥', '🌓', '✨', '🫡', '?', '💔'],
-            3: ['.5'],
-            4: ['+0.5'],
-            2: ['쩜오'],
-            5:  ['/+0.5']
-            }
-
+        half=['🌛', '반', '🌜', '🌗', '🫥', '🌓', '✨', '🫡', '?', '💔','.5','+0.5','쩜오','+/0.5']
         not_stars={
             '5점':('⭐⭐⭐⭐⭐',5),
+        }
+        table={
+            0.5:'🌛',
+            1:'⭐',
+            1.5:'⭐🌛',
+            2:'⭐⭐',
+            2.5:'⭐⭐🌛',
+            3:'⭐⭐⭐',
+            3.5:'⭐⭐⭐🌛',
+            4:'⭐⭐⭐⭐',
+            4.5:'⭐⭐⭐⭐🌛',
+            5:'⭐⭐⭐⭐⭐',         
         }
         #3. not_stars
         if stars in not_stars:
             return not_stars[stars]
         #2. int
-        if type(stars)==int:
-            num=stars
+        if is_float(stars):
+            num=is_float(stars)
         #1. 기본
         else:
-            num=0
-            for i in range(5):
-                if stars[i] in one:
-                    num+=1
-                else:
-                    break
-            length=1
-            while len(stars[i:])>=length:
-                if half[length]==stars[i:i+length]:
-                    num+=0.5
-                    break
+            num, plus_half=0, False
+            for st in one:
+                num+=stars.count(st)
+            for hf in half:
+                if stars.count(hf)>0:
+                    plus_half=True
+            if plus_half: num+=0.5
+            if num>5:
+                return stars, 0
         if num==0:
             star_str=stars
         else:
-            star_str='⭐'*int(num)
-            if (num-int(num))>0:
-                star_str=star_str+'🌛'
+            star_str=table[num]
     
         return star_str, num
 
     def refine_exceptions(self):
         keys=self.summary.keys()
-        if 'Score' in keys and self.summary['Score']=='인증':
-            self.get_score_from_stars()
+        if 'Score' in keys:
+            if self.summary['Score']=='인증':
+                self.get_score_from_stars()
+            elif not is_float(self.summary['Score']):
+                self.get_score_from_stars()
     
 
 cont_hdr_exceptions={
@@ -128,3 +145,10 @@ cont_hdr_exceptions={
     '출판사':[],
     '책 제목':[]
 }
+
+def is_float(str):
+    try:
+        float(str)
+        return float(str)
+    except:
+        return False
