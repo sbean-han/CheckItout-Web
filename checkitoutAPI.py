@@ -5,7 +5,7 @@ from urllib import request
 import pandas as pd
 
 class CIOBandToken:
-    token = 'ZQAAAXGiKTyGNuCdE77hKvr9_lELYlrnntxypBloeQDh6-UqVRioF-MWU31X-vMlpLzCtggDEi0ciG9ibJnkwkoOmgg3mlKwRaOQ3Go6rZJU6Bx_'# 한수빈Token임. 개인정보 조회하면 한수빈으로 나옴
+    token = 'ZQAAAXGiKTyGNuCdE77hKvr9_lEVu8DSH49U_VTJO-n_6uYZm6z1VU8H6dYrT0gasEWyh0dRZH7pSbErrzJun6tZDjnbcbPIVryFA7ZiRuZvdn0Z'# 한수빈Token임. 개인정보 조회하면 한수빈으로 나옴
     client_id= '43936540'
     redirect_uri='http://localhost:8888'
     client_secret='mebdlfZfOzbicInuZHp15mORFL8TFUL0'
