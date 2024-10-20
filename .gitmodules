@@ -1,0 +1,3 @@
+[submodule "CheckItOut"]
+	path = CheckItOut
+	url = https://github.com/sbean-han/CheckItOut.git
