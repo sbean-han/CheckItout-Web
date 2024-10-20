@@ -33,6 +33,19 @@ def reviews_tojson(reviews):
         json.dump(reviews, f, ensure_ascii=False)
 
 class review_post:
+    unwanted=False
+    score_star_table=table={
+            0.5:'🌛',
+            1:'⭐',
+            1.5:'⭐🌛',
+            2:'⭐⭐',
+            2.5:'⭐⭐🌛',
+            3:'⭐⭐⭐',
+            3.5:'⭐⭐⭐🌛',
+            4:'⭐⭐⭐⭐',
+            4.5:'⭐⭐⭐⭐🌛',
+            5:'⭐⭐⭐⭐⭐',         
+        }
     def __init__(self,review, type='dict'):
         if type=='dict':
             self.from_dict(review)
@@ -50,6 +63,7 @@ class review_post:
     def from_json(self,review):
         for key, val in review.items():
             setattr(self, key,val)
+        self.refine_contents()
 
     def refine_contents(self):
         bfr_cont=self.pre_contents
@@ -82,8 +96,8 @@ class review_post:
 
     def get_score_from_stars(self):
         stars, num=self.std_stars(self.summary['Stars'])
+        self.summary['Score']=float(num)
         self.summary['Stars']=stars
-        self.summary['Score']=num
 
     def std_stars(self,stars):
         stars.replace(' ','')
@@ -92,18 +106,6 @@ class review_post:
         not_stars={
             '5점':('⭐⭐⭐⭐⭐',5),
             '4/5':('⭐⭐⭐⭐',4)
-        }
-        table={
-            0.5:'🌛',
-            1:'⭐',
-            1.5:'⭐🌛',
-            2:'⭐⭐',
-            2.5:'⭐⭐🌛',
-            3:'⭐⭐⭐',
-            3.5:'⭐⭐⭐🌛',
-            4:'⭐⭐⭐⭐',
-            4.5:'⭐⭐⭐⭐🌛',
-            5:'⭐⭐⭐⭐⭐',         
         }
         #3. not_stars
         if stars in not_stars:
@@ -123,9 +125,10 @@ class review_post:
             if num>5:
                 return stars, 0
         if num==0:
+            self.unwanted=True
             star_str=stars
         else:
-            star_str=table[num]
+            star_str=self.score_star_table[num]
     
         return star_str, num
 
@@ -136,6 +139,12 @@ class review_post:
                 self.get_score_from_stars()
             elif not is_float(self.summary['Score']):
                 self.get_score_from_stars()
+            else:
+                self.summary['Score']=float(self.summary['Score'])
+                self.summary['Stars']=self.score_star_table[self.summary['Score']]
+            
+        else:
+            self.unwanted=True
     
 
 cont_hdr_exceptions={

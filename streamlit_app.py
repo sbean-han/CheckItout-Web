@@ -9,7 +9,7 @@ get_data=True
 if os.path.exists(data_path):
     file_time=os.path.getctime(data_path)
     current_time=time.time()
-    one_hour=current_time-3600
+    one_hour=current_time-3600*60*3
     if file_time> one_hour:
         get_data=False
 if get_data:
@@ -22,19 +22,19 @@ else:
     for rev in json_reviews:
         reviews.append(checkitoutAPI.review_post(rev, 'json'))        
 
-# def reviews_json(pre_rv):
-#     reviews=[]
-#     for it in pre_rv:
-#         if it['content'].startswith('#인증'):
-#             from checkitoutAPI import review_post
-#             reviews.append(review_post(it))
-#     review_summary=[rv.summary for rv in reviews]
-#     data=pd.DataFrame(review_summary)
-#     return reviews        
-
-# reviews=reviews_json(json_reviews)
 st.title("🎈 책키라웃 리뷰 Summary Page!")
+reviews=[rv for rv in reviews if not rv.unwanted]
+
 review_summary=[rv.summary for rv in reviews]
+reviewers=[rv.reviewer for rv in reviews]
+
 data=pd.DataFrame(review_summary)
-st.dataframe(data)
-print('running')
+data['reviewers']=reviewers
+reviewers_data=data.groupby('reviewers').describe()['Score'][['mean','min','max','std']]
+z_score=lambda z: (z['Score']-reviewers_data['mean'][z['reviewers']])/reviewers_data['std'][z['reviewers']]
+data['Z_score']=data.apply(z_score, axis=1)
+# data=data.set_index(['Title'])
+st.scatter_chart(data,x='reviewers',y='Z_score', color='Title')
+st.dataframe(data.filter(items=['Z_score','Title','Author','Stars','Score']).sort_values(by=['Z_score','Score'], ascending=False))
+
+# st.dataframe(reviewers_data)
