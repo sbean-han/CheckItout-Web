@@ -1,6 +1,6 @@
 import json
 import requests
-from .naverbandapi.client import BandOpenApi
+from naverbandAPI import BandOpenApi
 from urllib import request
 import pandas as pd
 
