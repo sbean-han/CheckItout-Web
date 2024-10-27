@@ -27,9 +27,9 @@ def get_reviews() ->list:
     data=pd.DataFrame(review_summary)
     return reviews
 
-def reviews_tojson(reviews):
+def reviews_tojson(reviews, filename):
     reviews=[rv.__dict__ for rv in reviews]
-    with open('reviews.json','w',encoding='utf-8') as f:
+    with open(filename,'w',encoding='utf-8') as f:
         json.dump(reviews, f, ensure_ascii=False)
 
 class review_post:
@@ -59,6 +59,7 @@ class review_post:
         self.emotion_count=review['emotion_count']
         self.post_key=review['post_key']
         self.refine_contents()
+        self.summary['reviewer']=self.reviewer
     
     def from_json(self,review):
         for key, val in review.items():
