@@ -3,7 +3,7 @@ import json
 import checkitoutAPI, aladinAPI
 import pandas as pd
 import os, time, datetime
-
+st.set_page_config(layout="wide")
 review_path='reviews.json'
 last_data_path='last_data.json'
 error_path='error.json'
