@@ -2,12 +2,12 @@ import streamlit as st
 import json
 import checkitoutAPI, aladinAPI
 import pandas as pd
-import os, time, datetime
+import os, time
+from configparser import ConfigParser
 st.set_page_config(layout="wide")
 review_path='reviews.json'
 last_data_path='last_data.json'
-error_path='error.json'
-mod_time=0
+error_path='errors.json'
 errors=[]
 reloadAladin=False
 ONE_HOUR=3600
@@ -21,26 +21,43 @@ def time_of_data(time_diff):
     elif time_diff < 60:
         minutes = int(time_diff// 60)
         time_display = f"{minutes}분 전"
-    else:
+    elif time_diff<60*60*24:
         hours = int(time_diff// 3600)
         time_display = f"{hours}시간 전"
+    else:
+        days = int(time_diff// 3600*24)
+        time_display = f"{days}일 전"
     return time_display
+
+def checkConfig():
+    global review_time, mod_time
+    config = ConfigParser()
+    config.read('conf.ini')
+    review_time=float(config['reviews']['pull_at'])
+    mod_time=getmodTime(review_time)
+
+def getmodTime(startTime):
+    current_time=time.time()
+    return current_time-startTime
 
 def checkReview():
     global mod_time
-    if os.path.exists(review_path):
-        file_time=os.path.getmtime(review_path)
-        current_time=time.time()
-        mod_time=current_time-file_time
-        if mod_time> ONE_HOUR*24:
-            mod_time=0
-            return True
+    mod_time=getmodTime(review_time)
+    if mod_time> ONE_HOUR*24:
+        mod_time=0
+        return True
     return False
 
 def get_reviewDict(reload):
     if reload:
         reviews=checkitoutAPI.get_reviews()
         checkitoutAPI.reviews_tojson(reviews,review_path)
+        config=ConfigParser()
+        config['reviews']={}
+        config['reviews']['pull_at']= str(time.time())
+        with open ('conf.ini','w') as f:
+            config.write(f)
+        
     else:
         reviews=[]
         with open(review_path, 'r', encoding='utf-8') as f:
@@ -71,19 +88,25 @@ def updateBooksInfo(books,reviews, need_aladin):
     global errors
     newbooks=[]
     if len(need_aladin)==0: return books
-    for book in reviews.loc[need_aladin]:
+    for idx, book in reviews.loc[need_aladin].iterrows():
         newbook, error=updateBookInfo(book)
         if error:
             errors.append(newbook.name)
         newbooks.append(newbook)
     newbooks=pd.concat([books,pd.DataFrame(newbooks)])
     newbooks.to_json(last_data_path)
+    errorlog(errors)
     return newbooks
+
+def errorlog(errors):
+    with open("errors.json", 'w') as f:
+        print(errors)
 
 def updateBookInfo(book):
     book_lists, keys=aladinAPI.getBookLists(book)
     return aladinAPI.chooseOneBook(book, book_lists, keys)
 
+checkConfig()
 st.write(time_of_data(mod_time))
 reload=checkReview()
 reviews=get_reviewDict(reload)

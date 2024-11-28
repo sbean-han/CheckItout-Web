@@ -65,6 +65,7 @@ class review_post:
         for key, val in review.items():
             setattr(self, key,val)
         self.refine_contents()
+        self.summary['reviewer']=self.reviewer
 
     def refine_contents(self):
         bfr_cont=self.pre_contents
