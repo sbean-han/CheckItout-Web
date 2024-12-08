@@ -10,6 +10,7 @@ last_data_path='last_data.json'
 error_path='errors.json'
 errors=[]
 reloadAladin=False
+show_z_plot=True
 ONE_HOUR=3600
 
 st.title("🎈 책키라웃 리뷰 Summary Page!")
@@ -99,12 +100,36 @@ def updateBooksInfo(books,reviews, need_aladin):
     return newbooks
 
 def errorlog(errors):
-    with open("errors.json", 'w') as f:
-        print(errors)
+    with open ('errors.json', 'w') as f:
+        f.write(str(errors))
 
 def updateBookInfo(book):
     book_lists, keys=aladinAPI.getBookLists(book)
     return aladinAPI.chooseOneBook(book, book_lists, keys)
+
+def update_groupby_score(Review_data, by='reviewer',plot=True,type=None):
+    reviewers_data=Review_data.groupby(by)
+    if type is None:
+        reviewers_data=reviewers_data.describe()['Score'][['mean','min','max','std']]
+        z_score=lambda z: (z['Score']-reviewers_data['mean'][z[by]])/reviewers_data['std'][z[by]]
+        Review_data['Z_score']=Review_data.apply(z_score, axis=1)
+        if plot:
+            st.scatter_chart(Review_data,x=by,y='Z_score', color='Title')
+        return Review_data
+    else:
+        return Review_data.groupby(by).agg({
+            'Score': 'mean',      # score 평균
+            'Z_score': 'count',    # z_score 평균
+            **{col: 'first' for col in Review_data.columns if col not in ['ISBN', 'Score', 'Z_score']}  # 나머지 열 첫 번째 값
+        }).reset_index()
+                
+
+def BookLists(Review_data):
+    Review_data=update_groupby_score(Review_data,'ISBN',False,'mean')
+    Review_data.rename(columns={'Z_score':'Review #'},inplace=True)
+    Output=Review_data.filter(items=['Review #','image','Title','Author','Stars','Score','ISBN']).sort_values(by=['Z_score','Review #'], ascending=False)
+    return Output
+
 
 checkConfig()
 st.write(time_of_data(mod_time))
@@ -114,11 +139,15 @@ Review_data=reviewDF(reviews)
 further_data=getFurtherReviews() ##last_data_path를 읽어옴.
 newidx=newReviewCnt(Review_data,further_data)
 Review_data=updateBooksInfo(further_data, Review_data, newidx)
+Review_data=update_groupby_score(Review_data, 'reviewer',show_z_plot)
+new_book_lists=BookLists(Review_data)
+event=st.dataframe(new_book_lists,
+                   column_config={'image': st.column_config.ImageColumn('Cover'),'Title': st.column_config.Column(width='medium'),'Author': st.column_config.Column(width='small')},
+                   height=500,use_container_width=True,hide_index=True,on_select="rerun", selection_mode='multi-row')
+my_choose=new_book_lists.iloc[event.selection.rows]
 
-reviewers_data=Review_data.groupby('reviewer').describe()['Score'][['mean','min','max','std']]
-z_score=lambda z: (z['Score']-reviewers_data['mean'][z['reviewer']])/reviewers_data['std'][z['reviewer']]
-Review_data['Z_score']=Review_data.apply(z_score, axis=1)
-# data=data.set_index(['Title'])
-st.scatter_chart(Review_data,x='reviewer',y='Z_score', color='Title')
-Output=Review_data.filter(items=['Z_score', 'image','Title','Author','Stars','ISBN','Score']).sort_values(by=['Z_score','Score'], ascending=False)
-st.dataframe(Output,column_config={'image': st.column_config.ImageColumn('Cover'),'Title': st.column_config.Column(width='medium'),'Author': st.column_config.Column(width='small')},height=500,use_container_width=True,hide_index=True)
+st.header('Selected!')
+if not my_choose.empty:
+    st.write(Review_data[Review_data.ISBN.isin(my_choose.ISBN)])
+# for isbn, idxs in Review_data.groupby(['ISBN']).groups:
+#     reviews[idxs]
