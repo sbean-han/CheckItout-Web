@@ -127,7 +127,7 @@ def update_groupby_score(Review_data, by='reviewer',plot=True,type=None):
 def BookLists(Review_data):
     Review_data=update_groupby_score(Review_data,'ISBN',False,'mean')
     Review_data.rename(columns={'Z_score':'Review #'},inplace=True)
-    Output=Review_data.filter(items=['Review #','image','Title','Author','Stars','Score','ISBN']).sort_values(by=['Z_score','Review #'], ascending=False)
+    Output=Review_data.filter(items=['Review #','image','Title','Author','Stars','Score','ISBN']).sort_values(by=['Review #','Score'], ascending=False)
     return Output
 
 
