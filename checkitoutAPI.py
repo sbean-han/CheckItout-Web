@@ -91,7 +91,7 @@ class review_post:
                 continue
             bfr_cont=sp[how[1]]
             if how[0]:
-                after[how[0]]=sp[0].lstrip(': ').rstrip('\n ')
+                after[how[0]]=sp[0].lstrip(':').rstrip('\n ')
         self.content=bfr_cont
         self.summary=after
         self.refine_exceptions()
