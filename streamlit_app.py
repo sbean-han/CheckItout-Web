@@ -6,9 +6,11 @@ import os, time
 from datetime import datetime, timedelta
 from configparser import ConfigParser
 st.set_page_config(layout="wide")
+
 review_path='reviews.json'
 last_data_path='last_data.json'
 error_path='errors.json'
+
 errors=[]
 reloadAladin=False
 show_z_plot=True
@@ -19,15 +21,24 @@ ONE_HOUR=3600
 
 st.title("🎈 책키라웃 Summary")
 
+    
+def update_config(change=['reviews','attending']):
+    if not('reviews' in change or 'attedning' in change):
+        change=['reviews','attending']
+    config=ConfigParser()
+    if 'reviews' in change:
+        config['reviews']={}
+        config['reviews']['pull_at']= str(time.time())
+    if 'attending' in change:
+        config['attending']={}
+        config['attending']['names']=attending
+    with open ('conf.ini','w') as f:
+        config.write(f)
+
 def update_reviews():
     reviews=checkitoutAPI.get_reviews()
     checkitoutAPI.reviews_tojson(reviews,review_path)
-    config=ConfigParser()
-    config['reviews']={}
-    config['reviews']['pull_at']= str(time.time())
-    config['attending']['names']=attending
-    with open ('conf.ini','w') as f:
-        config.write(f)
+    update_config()
 
 def time_of_data(time_diff):
     # 시간 차이에 따라 적절한 형식으로 변환
@@ -56,7 +67,7 @@ def getmodTime(startTime):
     current_time=time.time()
     return current_time-startTime
 
-def checkReview():
+def check_review_load_time():
     global mod_time
     mod_time=getmodTime(review_time)
     if mod_time> ONE_HOUR*24*7:
@@ -68,13 +79,7 @@ def get_reviewDict(reload):
     if reload:
         reviews=checkitoutAPI.get_reviews()
         checkitoutAPI.reviews_tojson(reviews,review_path)
-        config=ConfigParser()
-        config['reviews']={}
-        config['reviews']['pull_at']= str(time.time())
-        config['attending']['names']=attending
-        with open ('conf.ini','w') as f:
-            config.write(f)
-        
+        update_config()
     else:
         reviews=[]
         with open(review_path, 'r', encoding='utf-8') as f:
@@ -174,9 +179,7 @@ def find():
     config=ConfigParser()
     config.read('conf.ini')
     if not attending==config['attending']['names']:
-        config['attending']['names']=attending
-        with open ('conf.ini','w') as f:
-            config.write(f)
+        update_config('attending')
     
     review_time=[(rv.time, rv.reviewer) for rv in reviews if not rv.unwanted]
     start,end=get_unix_range(int(current_year),int(selected_month))
@@ -197,8 +200,8 @@ def find():
 
 checkConfig()
 
-reload=checkReview()
-reviews=get_reviewDict(reload)
+do_reload=check_review_load_time()
+reviews=get_reviewDict(do_reload)
 Review_data, real_reviews=reviewDF(reviews)
 further_data=getFurtherReviews() ##last_data_path를 읽어옴.
 newidx=newReviewCnt(Review_data,further_data)
