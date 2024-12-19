@@ -36,7 +36,7 @@ def update_config(change=['reviews','attending']):
         config.write(f)
 
 def update_reviews():
-    reviews=checkitoutAPI.get_reviews()
+    reviews=checkitoutAPI.get_newreviews(review_time)
     checkitoutAPI.reviews_tojson(reviews,review_path)
     update_config()
 
@@ -76,16 +76,11 @@ def check_review_load_time():
     return False
 
 def get_reviewDict(reload):
-    if reload:
-        reviews=checkitoutAPI.get_reviews()
-        checkitoutAPI.reviews_tojson(reviews,review_path)
-        update_config()
-    else:
-        reviews=[]
-        with open(review_path, 'r', encoding='utf-8') as f:
-            json_reviews=json.load(f)
-        for rev in json_reviews:
-            reviews.append(checkitoutAPI.review_post(rev, 'json'))  
+    reviews=[]
+    with open(review_path, 'r', encoding='utf-8') as f:
+        json_reviews=json.load(f)
+    for rev in json_reviews:
+        reviews.append(checkitoutAPI.review_post(rev, 'json'))  
     return reviews
 
 def reviewDF(reviews):
@@ -206,6 +201,7 @@ Review_data, real_reviews=reviewDF(reviews)
 further_data=getFurtherReviews() ##last_data_path를 읽어옴.
 newidx=newReviewCnt(Review_data,further_data)
 Review_data=updateBooksInfo(further_data, Review_data, newidx)
+
 with st.expander('개인별 점수분포'):
     Review_data=update_groupby_score(Review_data, 'reviewer',show_z_plot)
     st.write('마우스를 올리면 책이름을 알 수 있습니다.')

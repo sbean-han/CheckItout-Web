@@ -5,14 +5,14 @@ from urllib import request
 import pandas as pd
 
 class CIOBandToken:
-    token = 'ZQAAAXGiKTyGNuCdE77hKvr9_lEVu8DSH49U_VTJO-n_6uYZm6z1VU8H6dYrT0gasEWyh0dRZH7pSbErrzJun6tZDjnbcbPIVryFA7ZiRuZvdn0Z'# 한수빈Token임. 개인정보 조회하면 한수빈으로 나옴
-    client_id= '43936540'
+    token = 'ZQAAATm9KQjRrmgjs5ma_rSFDZpWVJYvhbG_ZN6qQRFdq2tqkQFuGq0zzq5mihGryRvokLJebQ8OG1K6DGyK_4JmiM--snekOxlbgR06rnPqbOQy'# 한수빈Token임. 개인정보 조회하면 한수빈으로 나옴
+    client_id= '444622380'
     redirect_uri='http://localhost:8888'
-    client_secret='mebdlfZfOzbicInuZHp15mORFL8TFUL0'
+    client_secret='RGypaxYRPSQEIazHzb616bLw_XOMZtCp'
     bandkey='AAAEXPSpQDly5hUs9Q5RUmv0'
 
 
-def get_reviews() ->list:
+def get_newreviews(last_update_time) ->list:
     CIOBandAPI=BandOpenApi(CIOBandToken.token)
     reviews=[]
     response=CIOBandAPI.get_posts(CIOBandToken.bandkey, "ko_KR")
@@ -20,6 +20,8 @@ def get_reviews() ->list:
         for it in response['items']:
             if it['content'].startswith('#인증'):
                 reviews.append(review_post(it))
+        if it['created_at']<last_update_time:
+            break
         params=response['paging']['next_params']
         response=CIOBandAPI.get_nextpage('posts', params, 'v2')
     
@@ -29,6 +31,12 @@ def get_reviews() ->list:
 
 def reviews_tojson(reviews, filename):
     reviews=[rv.__dict__ for rv in reviews]
+    with open(filename,'r',encoding='utf-8') as f:
+        json_reviews=json.load(f)
+    if len(reviews)==0:
+        reviews=json_reviews
+    else:
+        reviews+=json_reviews
     with open(filename,'w',encoding='utf-8') as f:
         json.dump(reviews, f, ensure_ascii=False)
 
